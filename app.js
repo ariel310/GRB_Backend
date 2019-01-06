@@ -15,6 +15,11 @@ app.use(bodyParser.json())
 var appRoutes = require('./Routes/app');
 var usuarioRoutes = require('./Routes/usuario');
 var loginRoutes = require('./Routes/login');
+var hospitalRoutes = require('./Routes/hospital');
+var medicoRoutes = require('./Routes/medico');
+var busquedaRoutes = require('./Routes/busqueda');
+var uploadRoutes = require('./Routes/upload');
+var imagenesRoutes = require('./Routes/imagenes');
 
 // Conexión a la base de datos
 mongoose.connection.openUri('mongodb://localhost:27017/hospitalDB', (err, res) => {
@@ -27,6 +32,11 @@ mongoose.connection.openUri('mongodb://localhost:27017/hospitalDB', (err, res) =
 // Rutas
 app.use('/usuario', usuarioRoutes);
 app.use('/login', loginRoutes);
+app.use('/hospital', hospitalRoutes);
+app.use('/medico', medicoRoutes);
+app.use('/busqueda', busquedaRoutes);
+app.use('/upload', uploadRoutes);
+app.use('/img', imagenesRoutes);
 app.use('/', appRoutes);
 
 // Escuchar peticiones
