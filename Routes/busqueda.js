@@ -16,20 +16,23 @@ app.get('/coleccion/:tabla/:busqueda', (req, res, next) => {
     var busqueda = req.params.busqueda;
     var tabla = req.params.tabla;
     var regex = new RegExp(busqueda, 'i');
+    var desde = req.query.desde || 0;
+
+    desde = Number(desde);
 
     var promesa;
 
     switch (tabla) {
         case 'usuario':
-            promesa = buscarUsuarios(busqueda, regex);
+            promesa = buscarUsuarios(busqueda, regex, desde);
             break;
 
         case 'hospital':
-            promesa = buscarHospitales(busqueda, regex);
+            promesa = buscarHospitales(busqueda, regex, desde);
             break;
 
         case 'medico':
-            promesa = buscarMedicos(busqueda, regex);
+            promesa = buscarMedicos(busqueda, regex, desde);
             break;
 
         default:
@@ -50,62 +53,63 @@ app.get('/coleccion/:tabla/:busqueda', (req, res, next) => {
 
 });
 
-function buscarHospitales(busqueda, regex) {
+// function buscarHospitales(busqueda, regex) {
 
-    return new Promise((resolve, reject) => {
+//     return new Promise((resolve, reject) => {
 
-        Hospital.find({ nombre: regex })
-            .populate('usuario')
-            .exec((err, hospitales) => {
+//         Hospital.find({ nombre: regex })
+//             .populate('usuario')
+//             .exec((err, hospitales) => {
 
-                if (err) {
-                    reject('Error al cargar hospitales');
-                } else {
-                    resolve(hospitales)
-                }
+//                 if (err) {
+//                     reject('Error al cargar hospitales');
+//                 } else {
+//                     resolve(hospitales)
+//                 }
 
-            });
+//             });
 
-    })
-}
+//     })
+// }
 
-function buscarMedicos(busqueda, regex) {
+// function buscarMedicos(busqueda, regex) {
 
-    return new Promise((resolve, reject) => {
+//     return new Promise((resolve, reject) => {
 
-        Medico.find({ nombre: regex })
-            .populate('usuario', 'nombre email')
-            .exec((err, medicos) => {
+//         Medico.find({ nombre: regex })
+//             .populate('usuario', 'nombre email')
+//             .exec((err, medicos) => {
 
-                if (err) {
-                    reject('Error al cargar los medicos');
-                } else {
-                    resolve(medicos)
-                }
+//                 if (err) {
+//                     reject('Error al cargar los medicos');
+//                 } else {
+//                     resolve(medicos)
+//                 }
 
-            });
+//             });
 
-    })
-}
+//     })
+// }
 
-function buscarUsuarios(busqueda, regex) {
+// function buscarUsuarios(busqueda, regex) {
 
-    return new Promise((resolve, reject) => {
+//     return new Promise((resolve, reject) => {
 
-        Usuario.find({}, 'nombre email role')
-            .or([{ nombre: regex }, { email: regex }])
-            .exec((err, usuarios) => {
+//         Usuario.find({}, 'nombre email role')
+//             .or([{ nombre: regex }, { email: regex }])
+//             .limit(5)
+//             .exec((err, usuarios) => {
 
-                if (err) {
-                    reject('Error al cargar los usuarios');
-                } else {
-                    resolve(usuarios)
-                }
+//                 if (err) {
+//                     reject('Error al cargar los usuarios');
+//                 } else {
+//                     resolve(usuarios)
+//                 }
 
-            });
+//             });
 
-    })
-}
+//     })
+// }
 
 
 // ========================================
@@ -135,12 +139,12 @@ app.get('/todo/:busqueda', (req, res, next) => {
 
 });
 
-function buscarHospitales(busqueda, regex) {
+function buscarHospitales(busqueda, regex, desde) {
 
     return new Promise((resolve, reject) => {
 
         Hospital.find({ nombre: regex })
-            .populate('usuario')
+            .populate('usuario', 'nombre img')
             .exec((err, hospitales) => {
 
                 if (err) {
@@ -154,12 +158,12 @@ function buscarHospitales(busqueda, regex) {
     })
 }
 
-function buscarMedicos(busqueda, regex) {
+function buscarMedicos(busqueda, regex, desde) {
 
     return new Promise((resolve, reject) => {
 
         Medico.find({ nombre: regex })
-            .populate('usuario', 'nombre email')
+            .populate('usuario', 'nombre email img')
             .exec((err, medicos) => {
 
                 if (err) {
@@ -173,12 +177,14 @@ function buscarMedicos(busqueda, regex) {
     })
 }
 
-function buscarUsuarios(busqueda, regex) {
+function buscarUsuarios(busqueda, regex, desde) {
 
     return new Promise((resolve, reject) => {
 
-        Usuario.find({}, 'nombre email role')
+        Usuario.find({}, 'nombre email role img')
             .or([{ nombre: regex }, { email: regex }])
+            .skip(desde)
+            .limit(5)
             .exec((err, usuarios) => {
 
                 if (err) {

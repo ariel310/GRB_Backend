@@ -105,7 +105,7 @@ app.post('/', mdAutenticacion.verificaToken, (req, res) => {
     var medico = new Medico({
         nombre: body.nombre,
         img: body.img,
-        hospital: body.hospitalId,
+        hospital: body.hospital,
         usuario: req.usuario._id
     });
 
