@@ -8,10 +8,10 @@ var app = express();
 
 //  CORS
 app.use(function(req, res, next) {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-  res.header("Access-Control-Allow-Methods", "POST, PUT, GET, DELETE, OPTIONS");
-  next();
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    res.header("Access-Control-Allow-Methods", "POST, PUT, GET, DELETE, OPTIONS");
+    next();
 });
 
 // Body-parser
@@ -28,6 +28,9 @@ var medicoRoutes = require('./Routes/medico');
 var busquedaRoutes = require('./Routes/busqueda');
 var uploadRoutes = require('./Routes/upload');
 var imagenesRoutes = require('./Routes/imagenes');
+var osRoutes = require('./Routes/os');
+var pacienteRoutes = require('./Routes/paciente');
+var localidadRoutes = require('./Routes/localidad');
 
 // Conexión a la base de datos
 mongoose.connection.openUri('mongodb://localhost:27017/hospitalDB', (err, res) => {
@@ -45,6 +48,9 @@ app.use('/medico', medicoRoutes);
 app.use('/busqueda', busquedaRoutes);
 app.use('/upload', uploadRoutes);
 app.use('/img', imagenesRoutes);
+app.use('/os', osRoutes);
+app.use('/paciente', pacienteRoutes);
+app.use('/localidad', localidadRoutes);
 app.use('/', appRoutes);
 
 // Escuchar peticiones
