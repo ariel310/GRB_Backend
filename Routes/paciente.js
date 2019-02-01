@@ -71,7 +71,7 @@ app.get('/:id', (req, res) => {
             if (!pacienteCargado) {
                 return res.status(400).json({
                     ok: false,
-                    mensaje: 'Paciente encontrado',
+                    mensaje: 'Paciente no encontrado',
                     errors: { message: 'No existe un paciente con el id: ' + id }
                 });
             }
@@ -103,7 +103,7 @@ app.put('/:id', mdAutenticacion.verificaToken, (req, res) => {
             });
         }
 
-        if (!os) {
+        if (!pacientes) {
             return res.status(400).json({
                 ok: false,
                 mensaje: 'Paciente no encontrado',
@@ -126,12 +126,12 @@ app.put('/:id', mdAutenticacion.verificaToken, (req, res) => {
         pacientes.dni = body.dni;
         pacientes.usuario = req.usuario._id
 
-        os.save((err, pacienteGuardado) => {
+        pacientes.save((err, pacienteGuardado) => {
 
             if (err) {
                 return res.status(400).json({
                     ok: false,
-                    mensaje: 'Error al actualizar la obra social',
+                    mensaje: 'Error al actualizar el paciente',
                     errors: err
                 });
             }

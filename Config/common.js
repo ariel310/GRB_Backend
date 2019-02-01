@@ -20,3 +20,10 @@ exports.responseOK = function(objeto, tipoObjeto, res, tipo, mensaje) {
     });
 
 }
+
+exports.capitalize = function(word) {
+    let upper = word.trim();
+    upper = upper.toLowerCase();
+    upper = upper.replace(/^\w/, c => c.toUpperCase());
+    return upper
+}

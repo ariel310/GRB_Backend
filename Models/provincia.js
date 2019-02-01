@@ -1,5 +1,6 @@
 var mongoose = require('mongoose');
 
+var uniqueValidator = require('mongoose-unique-validator');
 var Schema = mongoose.Schema;
 
 var provinciaSchema = new Schema({
@@ -10,5 +11,8 @@ var provinciaSchema = new Schema({
 
 });
 
+provinciaSchema.index({ nombre: 1, pais: 1 }, { unique: true });
+
+provinciaSchema.plugin(uniqueValidator, { message: 'El {PATH} ingresado ya existe' });
 
 module.exports = mongoose.model('Provincia', provinciaSchema);

@@ -6,11 +6,16 @@ var mdAutenticacion = require('../Middlewares/autenticacion');
 // Inicializar variables
 var app = express();
 var Ciudad = require('../Models/ciudad');
+var Provincia = require('../Models/provincia');
+var Pais = require('../Models/pais');
+
+var common = require('../Config/common');
+
 
 //========================================
 // Obtener todas las ciudades
 //========================================
-app.get('/', (req, res, next) => {
+app.get('/ciudad', (req, res, next) => {
 
     var desde = req.query.desde || 0;
     desde = Number(desde);
@@ -18,8 +23,12 @@ app.get('/', (req, res, next) => {
     limit = Number(limit);
 
     Ciudad.find({})
+        .populate({
+            path: 'provincia',
+            select: 'nombre pais',
+            populate: ({ path: 'pais', select: 'nombre' })
+        })
         .populate('usuario', 'nombre email')
-        .populate('Provincia', 'nombre')
         .skip(desde)
         .limit(limit)
         .exec(
@@ -37,7 +46,7 @@ app.get('/', (req, res, next) => {
                     res.status(200).json({
                         ok: true,
                         total: conteo,
-                        paciente: ciudades
+                        ciudad: ciudades
                     });
                 })
 
@@ -48,95 +57,86 @@ app.get('/', (req, res, next) => {
 //========================================
 // Obtener una ciudad
 //========================================
-app.get('/:id', (req, res) => {
+app.get('/ciudad/:id', (req, res) => {
 
     var id = req.params.id;
 
-    Paciente.findById(id)
-        .populate('usuario', 'nombre email img')
-        .populate('os', 'nombre')
-        .populate('planesOS', 'nombre')
-        .populate('Direccion', 'calle numero piso depto ciudad')
-        .exec((err, pacienteCargado) => {
+    Ciudad.findById(id)
+        .populate({
+            path: 'provincia',
+            select: 'nombre pais',
+            populate: ({ path: 'pais', select: 'nombre' })
+        })
+        .populate('usuario', 'nombre email')
+        .exec((err, ciudadCargada) => {
             if (err) {
                 return res.status(500).json({
                     ok: false,
-                    mensaje: 'Error al buscar un paciente',
+                    mensaje: 'Error al buscar una ciudad',
                     errors: err
                 });
             }
 
-            if (!pacienteCargado) {
+            if (!ciudadCargada) {
                 return res.status(400).json({
                     ok: false,
-                    mensaje: 'Paciente encontrado',
-                    errors: { message: 'No existe un paciente con el id: ' + id }
+                    mensaje: 'Ciudad no encontrada',
+                    errors: { message: 'No existe una ciudad con el id: ' + id }
                 });
             }
 
-            Paciente.count({}, (err, conteo) => {
+            Ciudad.count({}, (err, conteo) => {
                 res.status(200).json({
                     ok: true,
-                    paciente: pacienteCargado
+                    ciudad: ciudadCargada
                 });
             })
         })
 })
 
 //========================================
-// Actualizar un paciente
+// Actualizar una ciudad
 //========================================
-app.put('/:id', mdAutenticacion.verificaToken, (req, res) => {
+app.put('/ciudad/:id', mdAutenticacion.verificaToken, (req, res) => {
 
     var id = req.params.id;
     var body = req.body;
 
-    Paciente.findById(id, (err, pacientes) => {
+    Ciudad.findById(id, (err, ciudades) => {
 
         if (err) {
             return res.status(500).json({
                 ok: false,
-                mensaje: 'Error al buscar un paciente',
+                mensaje: 'Error al buscar una ciudad',
                 errors: err
             });
         }
 
-        if (!os) {
+        if (!ciudades) {
             return res.status(400).json({
                 ok: false,
-                mensaje: 'Paciente no encontrado',
-                errors: { message: 'No existe un paciente con el id:' + id }
+                mensaje: 'Ciudad no encontrada',
+                errors: { message: 'No existe una ciudad con el id:' + id }
             });
         }
 
-        pacientes.nombre = body.nombre;
-        pacientes.apellido = body.apellido;
-        pacientes.telCelular = body.telCelular;
-        pacientes.telFijo = body.telFijo;
-        pacientes.email = body.email;
-        pacientes.os = body.os;
-        pacientes.planOS = body.planOS;
-        pacientes.afiliado = body.afiliado;
-        pacientes.domicilio = body.domicilio;
-        pacientes.fechaNac = body.fechaNac;
-        pacientes.sexo = body.sexo;
-        pacientes.profesion = body.profesion;
-        pacientes.dni = body.dni;
-        pacientes.usuario = req.usuario._id
+        ciudades.nombre = common.capitalize(body.nombre);
+        ciudades.provincia = body.provincia;
+        ciudades.usuario = req.usuario._id
 
-        os.save((err, pacienteGuardado) => {
+        ciudades.save((err, ciudadGuardada) => {
 
             if (err) {
                 return res.status(400).json({
                     ok: false,
-                    mensaje: 'Error al actualizar la obra social',
+                    mensaje: 'Error al actualizar la ciudad',
                     errors: err
                 });
             }
 
             return res.status(200).json({
                 ok: true,
-                paciente: pacienteGuardado
+                ciudad: ciudadGuardada
             });
 
         })
@@ -146,41 +146,30 @@ app.put('/:id', mdAutenticacion.verificaToken, (req, res) => {
 })
 
 //========================================
-// Crear pacientes
+// Crear ciudades
 //========================================
-app.post('/', mdAutenticacion.verificaToken, (req, res) => {
+app.post('/ciudad', mdAutenticacion.verificaToken, (req, res) => {
     var body = req.body;
 
-    var paciente = new Paciente({
-        nombre: body.nombre,
-        apellido: body.apellido,
-        telCelular: body.telCelular,
-        telFijo: body.telFijo,
-        email: body.email,
-        os: body.os,
-        planOS: body.planOS,
-        afiliado: body.afiliado,
-        domicilio: body.domicilio,
-        fechaNac: body.fechaNac,
-        sexo: body.sexo,
-        profesion: body.profesion,
-        dni: body.dni,
+    var ciudad = new Ciudad({
+        nombre: common.capitalize(body.nombre),
+        provincia: body.provincia,
         usuario: req.usuario._id
     });
 
-    paciente.save((err, pacienteGuardado) => {
+    ciudad.save((err, ciudadGuardada) => {
 
         if (err) {
             return res.status(400).json({
                 ok: false,
-                mensaje: 'Error al crear un paciente',
+                mensaje: 'Error al crear una ciudad',
                 errors: err
             });
         }
 
         res.status(201).json({
             ok: true,
-            paciente: pacienteGuardado,
+            ciudad: ciudadGuardada,
             usuarioToken: req.usuario
         });
     })
@@ -188,37 +177,508 @@ app.post('/', mdAutenticacion.verificaToken, (req, res) => {
 });
 
 //========================================
-// Borrar paciente por id
+// Borrar ciudad por id
 //========================================
-app.delete('/:id', mdAutenticacion.verificaToken, (req, res) => {
+app.delete('/ciudad/:id', mdAutenticacion.verificaToken, (req, res) => {
 
     var id = req.params.id;
 
-    Paciente.findByIdAndRemove(id, (err, pacienteBorrado) => {
+    Ciudad.findByIdAndRemove(id, (err, ciudadBorrada) => {
 
         if (err) {
             return res.status(500).json({
                 ok: false,
-                mensaje: 'Error al borrar un paciente',
+                mensaje: 'Error al borrar un ciudad',
                 errors: err
             });
         }
 
-        if (!pacienteBorrado) {
+        if (!ciudadBorrada) {
             return res.status(400).json({
                 ok: false,
-                mensaje: 'Paciente no encontrado',
-                errors: { message: 'No existe un paciente con el id:' + id }
+                mensaje: 'Ciudad no encontrada',
+                errors: { message: 'No existe una ciudad con el id:' + id }
             });
         }
 
         res.status(200).json({
             ok: true,
-            paciente: pacienteBorrado
+            ciudad: ciudadBorrada
         });
 
     })
 })
 
+//========================================
+// Obtener todas las provincias
+//========================================
+app.get('/provincia', (req, res, next) => {
+
+    var desde = req.query.desde || 0;
+    desde = Number(desde);
+    var limit = req.query.limit || 0;
+    limit = Number(limit);
+
+    Provincia.find({})
+        .populate('pais', 'nombre')
+        .populate('usuario', 'nombre email')
+        .skip(desde)
+        .limit(limit)
+        .exec(
+            (err, provincias) => {
+
+                if (err) {
+                    return res.status(500).json({
+                        ok: false,
+                        mensaje: 'Error cargando provincias',
+                        errors: err
+                    });
+                }
+
+                Provincia.count({}, (err, conteo) => {
+                    res.status(200).json({
+                        ok: true,
+                        total: conteo,
+                        provincia: provincias
+                    });
+                })
+
+            })
+
+})
+
+//========================================
+// Obtener una provincia
+//========================================
+app.get('/provincia/:id', (req, res) => {
+
+    var id = req.params.id;
+
+    Provincia.findById(id)
+        .populate('pais', 'nombre')
+        .populate('usuario', 'nombre email')
+        .exec((err, provinciaCargada) => {
+            if (err) {
+                return res.status(500).json({
+                    ok: false,
+                    mensaje: 'Error al buscar una provincia',
+                    errors: err
+                });
+            }
+
+            if (!provinciaCargada) {
+                return res.status(400).json({
+                    ok: false,
+                    mensaje: 'Provincia no encontrada',
+                    errors: { message: 'No existe una provincia con el id: ' + id }
+                });
+            }
+
+            Provincia.count({}, (err, conteo) => {
+                res.status(200).json({
+                    ok: true,
+                    provincia: provinciaCargada
+                });
+            })
+        })
+})
+
+//========================================
+// Actualizar una provincia
+//========================================
+app.put('/provincia/:id', mdAutenticacion.verificaToken, (req, res) => {
+
+    var id = req.params.id;
+    var body = req.body;
+
+    Provincia.findById(id, (err, provincias) => {
+
+        if (err) {
+            return res.status(500).json({
+                ok: false,
+                mensaje: 'Error al buscar una provincia',
+                errors: err
+            });
+        }
+
+        if (!provincias) {
+            return res.status(400).json({
+                ok: false,
+                mensaje: 'Provincia no encontrada',
+                errors: { message: 'No existe una provincia con el id:' + id }
+            });
+        }
+
+        provincias.nombre = common.capitalize(body.nombre);
+        provincias.pais = body.pais;
+        provincias.usuario = req.usuario._id
+
+        provincias.save((err, provinciasGuardadas) => {
+
+            if (err) {
+                return res.status(400).json({
+                    ok: false,
+                    mensaje: 'Error al actualizar la provincia',
+                    errors: err
+                });
+            }
+
+            return res.status(200).json({
+                ok: true,
+                provincia: provinciasGuardadas
+            });
+
+        })
+
+    });
+
+})
+
+//========================================
+// Crear provincias
+//========================================
+app.post('/provincia', mdAutenticacion.verificaToken, (req, res) => {
+    var body = req.body;
+
+    var provincia = new Provincia({
+        nombre: common.capitalize(body.nombre),
+        pais: body.pais,
+        usuario: req.usuario._id
+    });
+
+    provincia.save((err, provinciaGuardada) => {
+
+        if (err) {
+            return res.status(400).json({
+                ok: false,
+                mensaje: 'Error al crear una provincia',
+                errors: err
+            });
+        }
+
+        res.status(201).json({
+            ok: true,
+            provincia: provinciaGuardada,
+            usuarioToken: req.usuario
+        });
+    })
+
+});
+
+//========================================
+// Borrar provincia por id
+//========================================
+app.delete('/provincia/:id', mdAutenticacion.verificaToken, (req, res) => {
+
+    var id = req.params.id;
+
+    Provincia.findByIdAndRemove(id, (err, provinciaBorrada) => {
+
+        if (err) {
+            return res.status(500).json({
+                ok: false,
+                mensaje: 'Error al borrar un provincia',
+                errors: err
+            });
+        }
+
+        if (!provinciaBorrada) {
+            return res.status(400).json({
+                ok: false,
+                mensaje: 'Provincia no encontrada',
+                errors: { message: 'No existe una provincia con el id:' + id }
+            });
+        }
+
+        res.status(200).json({
+            ok: true,
+            provincia: provinciaBorrada
+        });
+
+    })
+})
+
+
+//========================================
+// Obtener todas los paises
+//========================================
+app.get('/pais', (req, res, next) => {
+
+    var desde = req.query.desde || 0;
+    desde = Number(desde);
+    var limit = req.query.limit || 0;
+    limit = Number(limit);
+
+    Pais.find({})
+        .populate('usuario', 'nombre email')
+        .skip(desde)
+        .limit(limit)
+        .exec(
+            (err, paises) => {
+
+                if (err) {
+                    return res.status(500).json({
+                        ok: false,
+                        mensaje: 'Error cargando paises',
+                        errors: err
+                    });
+                }
+
+                Pais.count({}, (err, conteo) => {
+                    res.status(200).json({
+                        ok: true,
+                        total: conteo,
+                        pais: paises
+                    });
+                })
+
+            })
+
+})
+
+//========================================
+// Obtener un pais
+//========================================
+app.get('/pais/:id', (req, res) => {
+
+    var id = req.params.id;
+
+    Pais.findById(id)
+        .populate('usuario', 'nombre email')
+        .exec((err, paisCargado) => {
+            if (err) {
+                return res.status(500).json({
+                    ok: false,
+                    mensaje: 'Error al buscar un pais',
+                    errors: err
+                });
+            }
+
+            if (!paisCargado) {
+                return res.status(400).json({
+                    ok: false,
+                    mensaje: 'Pais no encontrado',
+                    errors: { message: 'No existe un pais con el id: ' + id }
+                });
+            }
+
+            Pais.count({}, (err, conteo) => {
+                res.status(200).json({
+                    ok: true,
+                    pais: paisCargado
+                });
+            })
+        })
+})
+
+//========================================
+// Actualizar un pais
+//========================================
+app.put('/pais/:id', mdAutenticacion.verificaToken, (req, res) => {
+
+    var id = req.params.id;
+    var body = req.body;
+
+    Pais.findById(id, (err, paises) => {
+
+        if (err) {
+            return res.status(500).json({
+                ok: false,
+                mensaje: 'Error al buscar un pais',
+                errors: err
+            });
+        }
+
+        if (!paises) {
+            return res.status(400).json({
+                ok: false,
+                mensaje: 'Pais no encontrado',
+                errors: { message: 'No existe un pais con el id:' + id }
+            });
+        }
+
+        paises.nombre = common.capitalize(body.nombre);
+        paises.usuario = req.usuario._id
+
+        paises.save((err, paisGuardado) => {
+
+            if (err) {
+                return res.status(400).json({
+                    ok: false,
+                    mensaje: 'Error al actualizar el pais',
+                    errors: err
+                });
+            }
+
+            return res.status(200).json({
+                ok: true,
+                pais: paisGuardado
+            });
+
+        })
+
+    });
+
+})
+
+//========================================
+// Crear paises
+//========================================
+app.post('/pais', mdAutenticacion.verificaToken, (req, res) => {
+    var body = req.body;
+
+    var paisCorregido = common.capitalize(body.nombre);
+
+    nuevoPais(paisCorregido, req.usuario._id, respuesta => {
+
+        err = respuesta.error;
+        paisGuardado = respuesta.paisGuardado;
+
+        if (err) {
+            return res.status(400).json({
+                ok: false,
+                mensaje: 'Error al crear un pais',
+                errors: err
+            });
+        }
+
+        res.status(201).json({
+            ok: true,
+            pais: paisGuardado,
+            usuarioToken: req.usuario
+        });
+    })
+});
+
+function nuevoPais(nombre, usuario, callback) {
+
+    var pais = new Pais({
+        nombre: nombre,
+        usuario: usuario
+    });
+
+    pais.save((err, paisGuardado) => {
+
+        response = { error: err, pais: paisGuardado }
+
+        callback(response);
+    });
+}
+
+//========================================
+// Borrar pais por id
+//========================================
+app.delete('/pais/:id', mdAutenticacion.verificaToken, (req, res) => {
+
+    var id = req.params.id;
+
+    Pais.findByIdAndRemove(id, (err, paisBorrado) => {
+
+        if (err) {
+            return res.status(500).json({
+                ok: false,
+                mensaje: 'Error al borrar un pais',
+                errors: err
+            });
+        }
+
+        if (!paisBorrado) {
+            return res.status(400).json({
+                ok: false,
+                mensaje: 'Pais no encontrada',
+                errors: { message: 'No existe un pais con el id:' + id }
+            });
+        }
+
+        res.status(200).json({
+            ok: true,
+            pais: paisBorrado
+        });
+
+    })
+});
+
+
+function buscarCiudadPorNombre(ciudad, callback) {
+
+    Ciudad.find({ nombre: ciudad })
+        .populate({
+            path: 'provincia',
+            select: 'nombre',
+            populate: {
+                path: 'pais',
+                select: 'nombre'
+            }
+        })
+        .exec((err, ciudades) => {
+
+            response = { error: err, ciudades: ciudades };
+
+            callback(response);
+        })
+
+}
+
+//========================================
+// Buscar ubicacion completa por nombre
+//========================================
+app.get('/ubicacion', (req, res) => {
+
+    var body = req.body;
+
+    city = common.capitalize(body.ciudad);
+    state = common.capitalize(body.provincia);
+    country = common.capitalize(body.pais);
+
+    usuario = req.usuario._id;
+
+    buscarCiudadPorNombre(city, resultado => {
+
+        err = resultado.err;
+        ciudad = resultado.ciudades;
+
+        if (err) {
+            return res.status(500).json({
+                ok: false,
+                mensaje: 'Error al recuperar la ubicacion',
+                errors: err
+            });
+        }
+
+        console.log(ciudad);
+
+        if (!ciudad) {
+            return res.status(400).json({
+                ok: false,
+                id: null,
+                errors: { message: 'No existe una ciudad con el nombre: ' + city }
+            });
+        }
+
+        if (ciudad.provincia.nombre !== state) {
+            return res.status(400).json({
+                ok: false,
+                id: null,
+                errors: { message: 'No existe una ciudad con el nombre: ' + city + ' en: ' + state }
+            });
+        }
+
+        if (ciudad.provincia.pais.nombre !== country) {
+            return res.status(400).json({
+                ok: false,
+                id: null,
+                errors: { message: 'No existe una ciudad con el nombre: ' + city + ' en: ' + state + '/' + country }
+            });
+        }
+
+        res.status(200).json({
+            ok: true,
+            id: ciudad
+        });
+
+    });
+
+
+});
 
 module.exports = app;
