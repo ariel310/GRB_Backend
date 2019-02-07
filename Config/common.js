@@ -24,6 +24,13 @@ exports.responseOK = function(objeto, tipoObjeto, res, tipo, mensaje) {
 exports.capitalize = function(word) {
     let upper = word.trim();
     upper = upper.toLowerCase();
-    upper = upper.replace(/^\w/, c => c.toUpperCase());
-    return upper
+
+    var splitStr = upper.toLowerCase().split(' ');
+    for (var i = 0; i < splitStr.length; i++) {
+
+        splitStr[i] = splitStr[i].charAt(0).toUpperCase() + splitStr[i].substring(1);
+    }
+
+    return splitStr.join(' ');
+
 }

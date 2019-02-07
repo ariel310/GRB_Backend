@@ -1,5 +1,5 @@
 var mongoose = require('mongoose');
-
+var uniqueValidator = require('mongoose-unique-validator');
 var Schema = mongoose.Schema;
 
 var planesOSSchema = new Schema({
@@ -10,5 +10,8 @@ var planesOSSchema = new Schema({
 
 });
 
+planesOSSchema.index({ nombre: 1, os: 1 }, { unique: true });
+
+planesOSSchema.plugin(uniqueValidator, { message: 'El {PATH} ingresado ya existe' });
 
 module.exports = mongoose.model('planesOS', planesOSSchema);

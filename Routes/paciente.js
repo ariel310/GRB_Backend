@@ -7,6 +7,8 @@ var mdAutenticacion = require('../Middlewares/autenticacion');
 var app = express();
 var Paciente = require('../Models/paciente');
 
+var common = require('../Config/common');
+
 //========================================
 // Obtener todos los pacientes
 //========================================
@@ -111,18 +113,17 @@ app.put('/:id', mdAutenticacion.verificaToken, (req, res) => {
             });
         }
 
-        pacientes.nombre = body.nombre;
-        pacientes.apellido = body.apellido;
+        pacientes.nombre = common.capitalize(body.nombre);
+        pacientes.apellido = common.capitalize(body.apellido);
         pacientes.telCelular = body.telCelular;
         pacientes.telFijo = body.telFijo;
         pacientes.email = body.email;
-        pacientes.os = body.os;
         pacientes.planOS = body.planOS;
         pacientes.afiliado = body.afiliado;
         pacientes.domicilio = body.domicilio;
         pacientes.fechaNac = body.fechaNac;
         pacientes.sexo = body.sexo;
-        pacientes.profesion = body.profesion;
+        pacientes.profesion = common.capitalize(body.profesion);
         pacientes.dni = body.dni;
         pacientes.usuario = req.usuario._id
 
@@ -154,18 +155,17 @@ app.post('/', mdAutenticacion.verificaToken, (req, res) => {
     var body = req.body;
 
     var paciente = new Paciente({
-        nombre: body.nombre,
-        apellido: body.apellido,
+        nombre: common.capitalize(body.nombre),
+        apellido: common.capitalize(body.apellido),
         telCelular: body.telCelular,
         telFijo: body.telFijo,
         email: body.email,
-        os: body.os,
         planOS: body.planOS,
         afiliado: body.afiliado,
         domicilio: body.domicilio,
         fechaNac: body.fechaNac,
         sexo: body.sexo,
-        profesion: body.profesion,
+        profesion: common.capitalize(body.profesion),
         dni: body.dni,
         usuario: req.usuario._id
     });

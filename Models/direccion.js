@@ -1,4 +1,5 @@
 var mongoose = require('mongoose');
+var uniqueValidator = require('mongoose-unique-validator');
 
 var Schema = mongoose.Schema;
 
@@ -13,5 +14,8 @@ var direccionSchema = new Schema({
 
 });
 
+direccionSchema.index({ calle: 1, numero: 1, piso: 1, depto: 1, ciudad: 1 }, { unique: true });
+
+direccionSchema.plugin(uniqueValidator, { message: 'El {PATH} ingresado ya existe' });
 
 module.exports = mongoose.model('Direccion', direccionSchema);
